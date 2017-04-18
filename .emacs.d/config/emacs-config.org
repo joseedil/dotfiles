@@ -1,0 +1,550 @@
+#+TITLE: Emacs config file
+
+* Emacs setup
+These are the basic environment setup.
+
+** Set personal information
+#+BEGIN_SRC emacs-lisp
+  (setq user-full-name "José Edil G. de Medeiros"
+        user-mail-address "jose.edil@gmail.com"
+        user-work-mail-address "j.edil@ene.unb.br"
+        calendar-latitude 59.2
+        calendar-longitude 18.4
+        calendar-location-name "Stockholm, Sweden")
+#+END_SRC
+
+** Add =resources= to =load-path=
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/resources/")
+#+END_SRC
+
+** Set custom-settings file
+#+BEGIN_SRC emacs-lisp
+(setq package-enable-at-startup nil)
+(setq custom-file "~/.emacs.d/config/custom-settings.el")
+(load custom-file t)
+#+END_SRC
+
+** Package repositories configuration
+Melpa-stable is the default repository, melpa gives me more last minute (and
+maybe unstable) packages and org-melpa is to update org mode itself.
+#+BEGIN_SRC emacs-lisp
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa-stable" . "http://stable.melpa.org/packages/") t)
+(add-to-list 'package-archives
+             '("org" . "http://orgmode.org/elpa/") t)
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/") t)
+#+END_SRC
+
+** Customize environment
+These are settings to customize the emacs environment for my work style.
+*** Make emacs behave better with OSX
+This package tries to keep OSX and emacs paths in sync. Useful if I add some app
+on my box.
+#+BEGIN_SRC emacs-lisp
+(require 'exec-path-from-shell)
+(exec-path-from-shell-initialize)
+#+END_SRC
+
+Make emacs UTF-8 compatible for bith display and editing.
+#+BEGIN_SRC emacs-lisp
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+#+END_SRC
+
+Make emacs behave nicely with backup files.
+#+BEGIN_SRC emacs-lisp
+(defvar --backup-directory (concat user-emacs-directory "backups"))
+(if (not (file-exists-p --backup-directory))
+        (make-directory --backup-directory t))
+(setq backup-directory-alist `(("." . ,--backup-directory)))
+
+(setq make-backup-files t               ; backup of a file the first time it is saved.
+      backup-by-copying t               ; don't clobber symlinks
+      version-control t                 ; version numbers for backup files
+      delete-old-versions t             ; delete excess backup files silently
+      delete-by-moving-to-trash t       ;
+      kept-old-versions 0               ; oldest versions to keep when a new numbered backup is made (default: 2)
+      kept-new-versions 9               ; newest versions to keep when a new numbered backup is made (default: 2)
+      auto-save-default t               ; auto-save every buffer that visits a file
+      auto-save-timeout 20              ; number of seconds idle time before auto-save (default: 30)
+      auto-save-interval 200            ; number of keystrokes between auto-saves (default: 300)
+      )
+(setq vc-make-backup-files t)
+
+;; Default and per-save backups go here:
+(setq backup-directory-alist '(("" . "~/.emacs.d/backup/per-save")))
+
+(defun force-backup-of-buffer ()
+  ;; Make a special "per session" backup at the first save of each
+  ;; emacs session.
+  (when (not buffer-backed-up)
+    ;; Override the default parameters for per-session backups.
+    (let ((backup-directory-alist '(("" . "~/.emacs.d/backup/per-session")))
+          (kept-new-versions 3))
+      (backup-buffer)))
+  ;; Make a "per save" backup on each save.  The first save results in
+  ;; both a per-session and a per-save backup, to keep the numbering
+  ;; of per-save backups consistent.
+  (let ((buffer-backed-up nil))
+    (backup-buffer)))
+
+(add-hook 'before-save-hook  'force-backup-of-buffer)
+#+END_SRC
+
+Makes emacs behave nicely with OSX open command: 'open with emacs'
+will send the file to the fullsscreen frame instead of create a new
+frame.
+#+BEGIN_SRC emacs-lisp
+(setq ns-pop-up-frames nil)
+#+END_SRC
+
+Allow 20MB of memory before calling garbage collection (deafault is
+0.76MB). This means less GC calls and might speed up some operations.
+#+BEGIN_SRC emacs-lisp
+(setq gc-cons-threshold 20000000)
+#+END_SRC
+
+Ensure files have no trailing spaces when saving, but do have a
+newline char.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(setq require-final-newline t)
+#+END_SRC
+
+Follow symlinks when opening files.
+#+BEGIN_SRC emacs-lisp
+(setq vc-follow-symlinks t)
+#+END_SRC
+
+If file starts with '#!' it might be a script, make it executable.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'after-save-hook
+            'executable-make-buffer-file-executable-if-script-p)
+#+END_SRC
+
+This is not a typewriter, sentences do not end with double spaces.
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end-double-space nil)
+#+END_SRC
+
+Start typing over a selected region and the text is gone.
+#+BEGIN_SRC emacs-lisp
+(delete-selection-mode t)
+#+END_SRC
+
+Asn y-or-n instead of yes-or-no.
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+*** Some visual setup
+I like to keep emacs fullscreen from the very beginning.
+#+BEGIN_SRC emacs-lisp
+(setq initial-frame-alist '((fullscreen . fullscreen)))
+#+END_SRC
+
+Propper line wrapping.
+#+BEGIN_SRC emacs-lisp
+(global-visual-line-mode 1)
+#+END_SRC
+
+Highlight current row.
+#+BEGIN_SRC emacs-lisp
+(global-hl-line-mode 1)
+(set-face-background hl-line-face "#f2f1f0")
+#+END_SRC
+
+Match parenthesis and such in every mode.
+#+BEGIN_SRC emacs-lisp
+(show-paren-mode 1)
+#+END_SRC
+
+Disable fringe beacause I use visual-line-mode.
+#+BEGIN_SRC emacs-lisp
+(set-fringe-mode '(2 . 0))
+#+END_SRC
+
+Inhibit splashscreen and clear the scratch buffer.
+#+BEGIN_SRC emacs-lisp
+(setq inhibit-splash-screen t)
+(setq initial-scratch-message nil)
+#+END_SRC
+
+Default frame height.
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'default-frame-alist '(height . 59))
+#+END_SRC
+
+Use 'ls -alh' in dired.
+#+BEGIN_SRC emacs-lisp
+(setq-default dired-listing-switches "-alh")
+#+END_SRC
+
+Turn syntex highlighting on whenever possible.
+#+BEGIN_SRC emacs-lisp
+(global-font-lock-mode t)
+#+END_SRC
+
+** Eye candy
+Use org bullets, it's simply eye candy.
+#+BEGIN_SRC emacs-lisp
+(require 'org-bullets)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+END_SRC
+
+Hide markup characteres in org.
+#+BEGIN_SRC emacs-lisp
+(setq org-hide-emphasis-markers t)
+#+END_SRC
+
+Better headers in org.
+#+BEGIN_SRC emacs-lisp
+; (let* ((variable-tuple (cond ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
+;                              ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+;                              ((x-list-fonts "Verdana")         '(:font "Verdana"))
+;                              ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+;                              (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+;        (base-font-color     (face-foreground 'default nil 'default))
+;        (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
+
+;   (custom-theme-set-faces 'user
+;                           `(org-level-8 ((t (,@headline ,@variable-tuple))))
+;                           `(org-level-7 ((t (,@headline ,@variable-tuple))))
+;                           `(org-level-6 ((t (,@headline ,@variable-tuple))))
+;                           `(org-level-5 ((t (,@headline ,@variable-tuple))))
+;                           `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.1))))
+;                           `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.25))))
+;                           `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.5))))
+;                           `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.75))))
+;                           `(org-document-title ((t (,@headline ,@variable-tuple :height 1.5 :underline nil))))))
+#+END_SRC
+
+** Useful key bindings
+I use the MacBook function keys pictures as a visual clue to remember the
+commands.
+
+Here comes a table of everything.
+| [f1]  | Split window horizontally   |
+| [f2]  | Close other windows         |
+| [f3]  | Toggle frame fullscreen     |
+| [f4]  | Show line counting numbers  |
+| [f5]  | Toggle auto-fill-mode       |
+| [f6]  | Magit status                |
+| [f7]  | Next window                 |
+| [f8]  | Revert-buffer               |
+| [f9]  | Previous window             |
+| [f10] | Switch to buffer            |
+| [f11] | Move buffer to left window  |
+| [f12] | Move buffer to right window |
+
+
+I like working with fullscreen emacs, its lees distracting, but sometimes I need
+to keep multiple windows visible in a limited Macbook screen.
+#+BEGIN_SRC emacs-lisp
+(global-set-key '[f3] 'toggle-frame-fullscreen)
+#+END_SRC
+
+Toggle line counting, most of the time I keep it off. Useful for compiling and
+debugging code.
+#+BEGIN_SRC emacs-lisp
+(global-set-key '[f4] 'linum-mode)
+#+END_SRC
+
+Toggle auto-fill-mode. This is useful most of the time, but some compilers
+complaint with it.
+#+BEGIN_SRC emacs-lisp
+(global-set-key '[f5] 'auto-fill-mode)
+#+END_SRC
+
+Revert-buffer.
+#+BEGIN_SRC emacs-lisp
+(global-set-key [f8] 'revert-buffer)
+#+END_SRC
+
+Customize splitting functions. Now the new window shows the last buffer.
+#+BEGIN_SRC emacs-lisp
+(defun vsplit-last-buffer ()
+  (interactive)
+  (split-window-vertically)
+  (other-window 1 nil)
+  (switch-to-next-buffer)
+  )
+(defun hsplit-last-buffer ()
+  (interactive)
+  (split-window-horizontally)
+  (other-window 1 nil)
+  (switch-to-next-buffer)
+  )
+
+(global-set-key (kbd "C-x 2") 'vsplit-last-buffer)
+(global-set-key (kbd "C-x 3") 'hsplit-last-buffer)
+
+(global-set-key [f1] 'hsplit-last-buffer)
+(global-set-key [f2] 'delete-other-windows)
+
+(global-set-key [f7] 'previous-multiframe-window)
+(global-set-key [f9] 'other-window)
+#+END_SRC
+
+Functions to move buffers between windows.
+#+BEGIN_SRC emacs-lisp
+(require 'buffer-move)
+;(global-set-key (kbd "<C-S-up>")     'buf-move-up)
+;(global-set-key (kbd "<C-S-down>")   'buf-move-down)
+(global-set-key [f11] 'buf-move-left)
+(global-set-key [f12] 'buf-move-right)
+#+END_SRC
+
+Buffer switching.
+#+BEGIN_SRC emacs-lisp
+(global-set-key [f10] 'switch-to-buffer)
+#+END_SRC
+
+Add some OSX behavior on cursor movement.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "s-<right>") 'move-end-of-line)
+(global-set-key (kbd "s-<left>") 'move-beginning-of-line)
+
+(setq scroll-error-top-bottom t)
+(global-set-key (kbd "s-<up>") 'scroll-down-command)
+(global-set-key (kbd "s-<down>") 'scroll-up-command)
+#+END_SRC
+
+Text scaling bindings.
+#+BEGIN_SRC emacs-lisp
+(define-key global-map (kbd "C-)")
+  '(lambda () (interactive) (text-scale-set 0)))
+(define-key global-map (kbd "C-+") 'text-scale-increase)
+(define-key global-map (kbd "C-=") 'text-scale-increase)
+(define-key global-map (kbd "C-_") 'text-scale-decrease)
+(define-key global-map (kbd "C--") 'text-scale-decrease)
+#+END_SRC
+
+* Ivy
+Ivy is an autocompletion system.
+#+BEGIN_SRC emacs-lisp
+(require 'ivy)
+(ivy-mode 1)
+(setq ivy-use-virtual-buffers t)
+(setq ivy-count-format "(%d/%d) ")
+#+END_SRC
+
+* RefTex
+RefTex is the reference manager I use for latex and org mode documents.
+#+BEGIN_SRC emacs-lisp
+(require 'reftex)
+#+END_SRC
+
+* Org Mode
+Org mode global bindings.
+#+BEGIN_SRC emacs-lisp
+(require 'org)
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-cb" 'org-iswitchb)
+(add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\|txt\\)$" . org-mode))
+(add-to-list 'auto-mode-alist '(".*/[0-9]*$" . org-mode))
+(transient-mark-mode 1)
+
+;; Disable keys in org-mode
+;;    C-c [
+;;    C-c ]
+;;    C-c ;
+;;    C-c C-x C-q  cancelling the clock (we never want this)
+(add-hook 'org-mode-hook
+          '(lambda ()
+             ;; Undefine C-c [ and C-c ] since this breaks my
+             ;; org-agenda files when directories are include It
+             ;; expands the files in the directories individually
+             (org-defkey org-mode-map "\C-c[" 'undefined)
+             (org-defkey org-mode-map "\C-c]" 'undefined)
+             (org-defkey org-mode-map "\C-c;" 'undefined)
+             (org-defkey org-mode-map "\C-c\C-x\C-q" 'undefined))
+          'append)
+#+END_SRC
+
+Journal files.
+#+BEGIN_SRC emacs-lisp
+(setq org-journal-dir "~/Org/Journal/")
+(setq org-agenda-file-regexp "\\`[^.].*\\.org\\'\\|[0-9]+")
+#+END_SRC
+
+Agenda files.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-files '("~/Org"
+                         "~/Org/Journal"))
+#+END_SRC
+
+Capture mode entries.
+#+BEGIN_SRC emacs-lisp
+(setq org-capture-templates (
+      quote (("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Tasks")
+              "* TODO %?\n %i\n %a")
+             ("j" "Journal" entry (file+datetree "~/Org/Research_Journal.org")
+              "* %?\nEntered on %U\n %i\n %a"))))
+#+END_SRC
+
+Custom agenda commands.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-custom-commands
+      '(("j" . "Journal entries") ; Journal entries
+        ("jm" tags "org_journal")
+        ("c" "Simples agenda view"
+         ((agenda "")
+          (alltodo "")))))
+#+END_SRC
+
+Todo config.
+#+BEGIN_SRC emacs-lisp
+; Log when done.
+(setq org-log-done 'date)
+#+END_SRC
+
+Custom org mode export latex-to-pdf command.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-pdf-process '("latexmk -bibtex -pdf -gg %f"))
+#+END_SRC
+
+Use RefTex on Org.
+#+BEGIN_SRC emacs-lisp
+(defun org-mode-reftex-setup ()
+  (load-library "reftex")
+  (and (buffer-file-name)
+  (file-exists-p (buffer-file-name))
+  (reftex-parse-all))
+  (define-key org-mode-map (kbd "C-c (") 'reftex-citation))
+
+(add-hook 'org-mode-hook 'org-mode-reftex-setup)
+#+END_SRC
+
+* Magit
+Magit is a git client inside emacs.
+#+BEGIN_SRC emacs-lisp
+(require 'magit)
+(global-set-key (kbd "C-x g") 'magit-status)
+(global-set-key (kbd "C-x C-g") 'magit-dispatch-popup)
+(global-set-key [f6] 'magit-status)
+#+END_SRC
+
+* Ispell
+Spell checking.
+#+BEGIN_SRC emacs-lisp
+;(setq exec-path (append exec-path '("/opt/local/bin")))
+(autoload 'flyspell-mode "flyspell" "On-the-fly spelling checker." t)
+(setenv "DICTIONARY" "en_US")
+(setq ispell-program-name "aspell")
+;(setq ispell-list-command "--list")
+#+END_SRC
+
+* AucTex
+AucTex is an integrated environment for LaTeX.
+#+BEGIN_SRC emacs-lisp
+(require 'tex)
+(setq TeX-auto-save t)                  ; Enable parse on save
+(setq TeX-parse-self t)                 ; Enable parse on load
+(setq-default TeX-master nil)
+#+END_SRC
+
+Default is to compile to pdf.
+#+BEGIN_SRC emacs-lisp
+(setq TeX-PDF-mode t)
+#+END_SRC
+
+Enable spell checking.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(setq ispell-dictionary "english")
+#+END_SRC
+
+Enable fold mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'TeX-mode-hook (lambda () (TeX-fold-mode 1)))
+#+END_SRC
+
+Enable math mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+#+END_SRC
+
+Add Make to compilation list. Useful for projects with Makefile.
+#+BEGIN_SRC emacs-lisp
+(eval-after-load "tex"
+  '(add-to-list 'TeX-command-list
+                '("Make" "make" TeX-run-command nil nil)))
+(add-hook 'TeX-mode-hook '(lambda () (setq TeX-command-default "Make")))
+#+END_SRC
+
+Use Skim as the default pdf viewer.
+#+BEGIN_SRC emacs-lisp
+(setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+(setq TeX-view-program-list
+  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+(server-start)
+#+END_SRC
+
+Enable RefTex.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'TeX-mode-hook 'turn-on-reftex)
+#+END_SRC
+* Haskell
+These are facilities to Haskell programming.
+#+BEGIN_SRC emacs-lisp
+(require 'ghc)
+(require 'haskell-mode)
+(require 'company-ghc)
+
+; Let Emacs look in Cabal directory for binaries
+;(let ((my-cabal-path (expand-file-name "/usr/local/bin")))
+  ;(setenv "PATH" (concat my-cabal-path path-separator (getenv "PATH")))
+  ;(add-to-list 'exec-path "~/Library/Haskell/bin"))
+  ;(add-to-list 'exec-path my-cabal-path))
+#+END_SRC
+
+Identation mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+#+END_SRC
+
+Haskell specific key bindings.
+#+BEGIN_SRC emacs-lisp
+(eval-after-load 'haskell-mode '(progn
+  (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-file)
+  (define-key haskell-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
+  (define-key haskell-mode-map (kbd "C-c C-n C-t") 'haskell-process-do-type)
+  (define-key haskell-mode-map (kbd "C-c C-n C-i") 'haskell-process-do-info)
+  (define-key haskell-mode-map (kbd "C-c C-n C-c") 'haskell-process-cabal-build)
+  (define-key haskell-mode-map (kbd "C-c C-n c") 'haskell-process-cabal)))
+(eval-after-load 'haskell-cabal '(progn
+  (define-key haskell-cabal-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
+  (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+  (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+  (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)))
+
+(eval-after-load 'haskell-mode
+  '(define-key haskell-mode-map (kbd "C-c C-o") 'haskell-compile))
+(eval-after-load 'haskell-cabal
+  '(define-key haskell-cabal-mode-map (kbd "C-c C-o") 'haskell-compile))
+#+END_SRC
+
+GHC mode.
+#+BEGIN_SRC emacs-lisp
+(autoload 'ghc-init "ghc" nil t)
+(autoload 'ghc-debug "ghc" nil t)
+(add-hook 'haskell-mode-hook (lambda () (ghc-init)))
+#+END_SRC
+
+* Company mode
+Enable Company mode, a text completion framework.
+#+BEGIN_SRC emacs-lisp
+(require 'company)
+(add-hook 'after-init-hook 'global-company-mode)
+(add-to-list 'company-backends 'company-ghc)
+#+END_SRC
+* Smartparens
+Minor mode for Emacs that deals with parens pairs and tries to be
+smart about it.
