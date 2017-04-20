@@ -2,7 +2,6 @@
 
 * Emacs setup
 These are the basic environment setup.
-
 ** Set personal information
 #+BEGIN_SRC emacs-lisp
   (setq user-full-name "José Edil G. de Medeiros"
@@ -41,6 +40,11 @@ maybe unstable) packages and org-melpa is to update org mode itself.
 ** Customize environment
 These are settings to customize the emacs environment for my work style.
 *** Make emacs behave better with OSX
+Start emacs server.
+#+BEGIN_SRC emacs-lisp
+(server-start)
+#+END_SRC
+
 This package tries to keep OSX and emacs paths in sync. Useful if I add some app
 on my box.
 #+BEGIN_SRC emacs-lisp
