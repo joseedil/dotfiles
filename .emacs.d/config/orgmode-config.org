@@ -1,0 +1,119 @@
+* Org Mode
+Org mode global bindings.
+#+BEGIN_SRC emacs-lisp
+(require 'org)
+(require 'ox-bibtex)
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-cb" 'org-iswitchb)
+(add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\|txt\\)$" . org-mode))
+(add-to-list 'auto-mode-alist '(".*/[0-9]*$" . org-mode))
+(transient-mark-mode 1)
+
+;; Disable keys in org-mode
+;;    C-c [
+;;    C-c ]
+;;    C-c ;
+;;    C-c C-x C-q  cancelling the clock (we never want this)
+(add-hook 'org-mode-hook
+          '(lambda ()
+             ;; Undefine C-c [ and C-c ] since this breaks my
+             ;; org-agenda files when directories are include It
+             ;; expands the files in the directories individually
+             (org-defkey org-mode-map "\C-c[" 'undefined)
+             (org-defkey org-mode-map "\C-c]" 'undefined)
+             (org-defkey org-mode-map "\C-c;" 'undefined)
+             (org-defkey org-mode-map "\C-c\C-x\C-q" 'undefined))
+          'append)
+#+END_SRC
+
+Journal files.
+#+BEGIN_SRC emacs-lisp
+(setq org-journal-dir "~/Org/Journal/")
+(setq org-agenda-file-regexp "\\`[^.].*\\.org\\'\\|[0-9]+")
+#+END_SRC
+
+Agenda files.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-files '("~/Org"
+                         "~/Org/Journal"))
+#+END_SRC
+
+Capture mode entries.
+#+BEGIN_SRC emacs-lisp
+(setq org-capture-templates (
+      quote (("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Tasks")
+              "* TODO %?\n %i\n %a")
+             ("j" "Journal" entry (file+datetree "~/Org/Research_Journal.org")
+              "* %?\nEntered on %U\n %i\n %a"))))
+#+END_SRC
+
+Custom agenda commands.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-custom-commands
+      '(("j" . "Journal entries") ; Journal entries
+        ("jm" tags "org_journal")
+        ("c" "Simples agenda view"
+         ((agenda "")
+          (alltodo "")))))
+#+END_SRC
+
+Todo config.
+#+BEGIN_SRC emacs-lisp
+; Log when done.
+(setq org-log-done 'date)
+#+END_SRC
+
+Custom org mode export latex-to-pdf command.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-pdf-process '("latexmk -bibtex -pdf -gg %f"))
+#+END_SRC
+
+Use RefTex on Org.
+#+BEGIN_SRC emacs-lisp
+(defun org-mode-reftex-setup ()
+  (load-library "reftex")
+  (and (buffer-file-name)
+  (file-exists-p (buffer-file-name))
+  (reftex-parse-all))
+  (define-key org-mode-map (kbd "C-c (") 'reftex-citation))
+
+(add-hook 'org-mode-hook 'org-mode-reftex-setup)
+#+END_SRC
+* Org Mode Projects
+#+BEGIN_SRC emacs-lisp
+;;(require 'org-publish)
+;;(setq org-publish-project-alist
+;;  '(
+;;  ("org-teste.edil.academy"
+;;    ;; Path to org files
+;;    :base-directory "~/0-org/0-website/joseedil.github.io/org/"
+;;
+;;    ;; Path to site files
+;;    :publishing-directory "~/0-org/0-website/joseedil.github.io/"
+;;
+;;    :base-extension "org"
+;;    ;;:publishing-function org-html-publish-to-html
+;;    :publishing-function org-html-publish-to-html
+;;    :recursive t
+;;    :headline-levels 4
+;;    :html-extension "html"
+;;    :body-only t ;; Only export section between <body> </body>
+;;    :table-of-contents nil)
+;;
+;;  ("org-static-teste.edil.academy"
+;;    :base-directory "~/0-org/0-website/joseedil.github.io/org/"
+;;    :base-extension "css\\|js\\|png\\|jpg\\|gif\\|pdf\\|mp3\\|ogg\\|swf\\|php"
+;;    :publishing-directory "~/0-org/0-website/joseedil.github.io/"
+;;    :recursive t
+;;    :publishing-function org-publish-attachment
+;;    :table-of-contents nil)
+;;
+;;  ("teste.edil.academy"
+;;    :components
+;;      ("org-teste.edil.academy" "org-static-teste.edil.academy"))
+;;
+;;))
+#+END_SRC
